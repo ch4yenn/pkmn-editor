@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pokémon Heart and Soul Save Editor v2.0.19 (HnS v2.0.6)</title>
+  <title>Pokémon Heart and Soul Save Editor v2.0.20 (HnS v2.0.6)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1354,6 +1354,9 @@
     }
     .pc-search-results {
       z-index: 99999 !important;
+    }
+    .search-select__option * {
+      pointer-events: none;
     }
     .search-select__option {
       width: 100%;
@@ -2805,7 +2808,7 @@
 <body>
 
   <header class="hero">
-    <div class="hero-badge">✨ Pokémon Heart and Soul Master Save Editor • v2.0.19 (HnS v2.0.6 Database)</div>
+    <div class="hero-badge">✨ Pokémon Heart and Soul Master Save Editor • v2.0.20 (HnS v2.0.6 Database)</div>
     <h1>Pokémon Heart and Soul Save Editor</h1>
     <p>เครื่องมือแก้ไขเซฟเกม Pokémon Heart and Soul (v2.0.6) อ้างอิงตามเอกสารล่าสุด Official Documentation Flash 128KB รองรับ Party ครบ 6 ตัว, PC Storage 14 กล่อง (420 ช่อง), ปรับค่า IVs / EVs พร้อมระบบคำนวณสเตตัส Real-time, ท่าต่อสู้ & Max PP, เติมไอเท็มด่วน One-Click, และแก้ไขข้อมูล Trainer</p>
     <div class="version-selector-bar">
@@ -4930,10 +4933,13 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       if (!mon || slot < 0 || slot >= 4) return;
       const id = Number(moveId);
       const mvMeta = this.moveMeta(id);
+      const basePp = mvMeta ? mvMeta.pp : 0;
       mon.moves[slot] = {
         id,
-        pp: mvMeta ? mvMeta.pp : 0,
-        basePp: mvMeta ? mvMeta.pp : 0,
+        pp: basePp,
+        basePp,
+        ppBonus: 0,
+        currentMaxPp: basePp,
         name: mvMeta ? mvMeta.name : "None"
       };
       this.setPartyPokemon(index, mon);
@@ -5591,6 +5597,23 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       if (mon.moves[slot].pp > maxPp) {
         mon.moves[slot].pp = maxPp;
       }
+      this.setBoxPokemon(boxIndex, slotIndex, mon);
+    }
+
+    setBoxMove(boxIndex, slotIndex, slot, moveId) {
+      const mon = this.getBoxPokemon(boxIndex, slotIndex);
+      if (!mon || slot < 0 || slot >= 4) return;
+      const id = Number(moveId);
+      const mvMeta = this.moveMeta(id);
+      const basePp = mvMeta ? mvMeta.pp : 0;
+      mon.moves[slot] = {
+        id,
+        pp: basePp,
+        basePp,
+        ppBonus: 0,
+        currentMaxPp: basePp,
+        name: mvMeta ? mvMeta.name : "None"
+      };
       this.setBoxPokemon(boxIndex, slotIndex, mon);
     }
 
@@ -6325,10 +6348,16 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
         } else {
           button.append(textWrap, meta);
         }
-        button.addEventListener("pointerdown", (event) => {
+        let hasSelected = false;
+        const handleSelect = (event) => {
           event.preventDefault();
+          event.stopPropagation();
+          if (hasSelected) return;
+          hasSelected = true;
           this.select(option);
-        });
+        };
+        button.addEventListener("pointerdown", handleSelect);
+        button.addEventListener("click", handleSelect);
         listWrap.append(button);
       });
 
@@ -14753,7 +14782,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
           return parts.join(" • ");
         },
         onChange: (entry) => {
-          editor.setPartyMove(mon.index, slot, entry.id);
+          editor.setPartyMove(selectedPartyIndex, slot, entry.id);
           renderParty();
           showStatus(`ตั้งท่าช่อง ${slot + 1} เป็น ${entry.name} แล้ว`);
         }
