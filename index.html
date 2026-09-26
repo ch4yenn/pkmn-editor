@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pokémon Heart and Soul Save Editor v2.0.17 (HnS v2.0.6)</title>
+  <title>Pokémon Heart and Soul Save Editor v2.0.18 (HnS v2.0.6)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2697,13 +2697,115 @@
       border: 1px solid rgba(6, 182, 212, 0.4);
     }
 
+  
+    /* Pokemon Type Effectiveness Box in mon-hero */
+    .mon-hero__effectiveness {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.35);
+    }
+    .eff-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 0.78rem;
+    }
+    .eff-label {
+      font-weight: 800;
+      font-size: 0.74rem;
+      letter-spacing: 0.3px;
+      min-width: 66px;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .eff-label--weak {
+      color: #f87171;
+    }
+    .eff-label--resist {
+      color: #4ade80;
+    }
+    .eff-list {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .eff-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 1.5px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      cursor: default;
+      user-select: none;
+    }
+    .eff-pill .eff-icon {
+      font-size: 0.72rem;
+    }
+    .eff-pill .eff-name {
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+    .eff-mult {
+      font-size: 0.65rem;
+      font-weight: 900;
+      padding: 0 3px;
+      border-radius: 3px;
+      background: rgba(0, 0, 0, 0.4);
+      font-family: var(--font-mono);
+      margin-left: 1px;
+    }
+    .eff-mult.mult-4x {
+      background: #b91c1c;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    .eff-mult.mult-2x {
+      background: rgba(0, 0, 0, 0.45);
+      color: #fed7aa;
+    }
+    .eff-mult.mult-half {
+      background: rgba(0, 0, 0, 0.45);
+      color: #bbf7d0;
+    }
+    .eff-mult.mult-quarter {
+      background: #047857;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+    .eff-mult.mult-0x {
+      background: #4338ca;
+      color: #e0e7ff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .eff-none {
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-style: italic;
+    }
+
   </style>
 
 </head>
 <body>
 
   <header class="hero">
-    <div class="hero-badge">✨ Pokémon Heart and Soul Master Save Editor • v2.0.17 (HnS v2.0.6 Database)</div>
+    <div class="hero-badge">✨ Pokémon Heart and Soul Master Save Editor • v2.0.18 (HnS v2.0.6 Database)</div>
     <h1>Pokémon Heart and Soul Save Editor</h1>
     <p>เครื่องมือแก้ไขเซฟเกม Pokémon Heart and Soul (v2.0.6) อ้างอิงตามเอกสารล่าสุด Official Documentation Flash 128KB รองรับ Party ครบ 6 ตัว, PC Storage 14 กล่อง (420 ช่อง), ปรับค่า IVs / EVs พร้อมระบบคำนวณสเตตัส Real-time, ท่าต่อสู้ & Max PP, เติมไอเท็มด่วน One-Click, และแก้ไขข้อมูล Trainer</p>
     <div class="version-selector-bar">
@@ -2987,19 +3089,7 @@
     </div>
   </main>
 
-  <!-- SHOWDOWN IMPORT MODAL -->
-  <dialog id="showdownModal">
-    <h3 style="font-size:1.25rem; margin-bottom:6px; color:#fff;">📥 นำเข้าจาก Pokémon Showdown Text</h3>
-    <p style="color:var(--muted); font-size:0.85rem; margin-bottom:14px;">วางข้อความจาก Pokémon Showdown หรือ Smogon เพื่อนำเข้าข้อมูลโปเกมอน</p>
-    <textarea id="showdownInput" rows="9" placeholder="Lucario @ Lucarionite&#10;Ability: Inner Focus&#10;EVs: 252 Atk / 4 SpD / 252 Spe&#10;Jolly Nature&#10;- Close Combat&#10;- Meteor Mash&#10;- Bullet Punch&#10;- Swords Dance" style="font-family:var(--font-mono); font-size:0.85rem; margin-bottom:14px;"></textarea>
-    <div id="showdownPreview" style="background:var(--surface-sub); border:1px solid var(--border); padding:10px 14px; border-radius:var(--radius-sm); font-size:0.85rem; margin-bottom:14px;">
-      <span style="color:var(--muted);">ตัวอย่างที่ตรวจพบ: </span><strong id="showdownPreviewText">—</strong>
-    </div>
-    <div class="modal-actions">
-      <button id="btnCloseShowdownModal" class="button" type="button">ยกเลิก</button>
-      <button id="btnApplyShowdown" class="button button--primary" type="button">✅ ยืนยันการนำเข้า</button>
-    </div>
-  </dialog>
+  
 
   <!-- SORT CURRENT BOX MODAL -->
   <dialog id="sortCurrentBoxModal">
@@ -3170,7 +3260,7 @@
             📊 ค่าพลัง & สเตตัส (Stats & IV/EV)
           </button>
           <button type="button" class="mon-subtab-btn ${activeTab === 'moves' ? 'is-active' : ''}" data-montab="moves">
-            ⚔️ ท่าต่อสู้ & บิลด์ (Moves & Builds)
+            ⚔️ ท่าต่อสู้ (Moves & PP)
           </button>
           <button type="button" class="mon-subtab-btn ${activeTab === 'profile' ? 'is-active' : ''}" data-montab="profile">
             🧬 ข้อมูล & ร่าง (Profile & Evolution)
@@ -3570,6 +3660,140 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
     return '<div class="type-badges-wrap">' + types.map(t => '<span class="type-badge type--' + t + '">' + t + '</span>').join("") + '</div>';
   }
 
+
+  
+  const ALL_ELEMENT_TYPES = [
+    "normal", "fire", "water", "electric", "grass", "ice",
+    "fighting", "poison", "ground", "flying", "psychic", "bug",
+    "rock", "ghost", "dragon", "steel", "dark", "fairy"
+  ];
+
+  const TYPE_EFF_META = {
+    normal:   { nameTh: "ปกติ",   icon: "⚪" },
+    fire:     { nameTh: "ไฟ",     icon: "🔥" },
+    water:    { nameTh: "น้ำ",    icon: "💧" },
+    electric: { nameTh: "ไฟฟ้า",  icon: "⚡" },
+    grass:    { nameTh: "พืช",    icon: "🌿" },
+    ice:      { nameTh: "น้ำแข็ง", icon: "❄️" },
+    fighting: { nameTh: "ต่อสู้",  icon: "🥊" },
+    poison:   { nameTh: "พิษ",    icon: "☠️" },
+    ground:   { nameTh: "ดิน",    icon: "🏜️" },
+    flying:   { nameTh: "บิน",    icon: "🦅" },
+    psychic:  { nameTh: "พลังจิต", icon: "🔮" },
+    bug:      { nameTh: "แมลง",   icon: "🐛" },
+    rock:     { nameTh: "หิน",    icon: "🪨" },
+    ghost:    { nameTh: "ผี",     icon: "👻" },
+    dragon:   { nameTh: "มังกร",  icon: "🐉" },
+    steel:    { nameTh: "เหล็ก",  icon: "⚙️" },
+    dark:     { nameTh: "มืด",    icon: "🌑" },
+    fairy:    { nameTh: "แฟรี่",  icon: "✨" }
+  };
+
+  const TYPE_EFF_MATRIX = {
+    normal:   { rock: 0.5, ghost: 0, steel: 0.5 },
+    fire:     { fire: 0.5, water: 0.5, grass: 2, ice: 2, bug: 2, rock: 0.5, dragon: 0.5, steel: 2 },
+    water:    { fire: 2, water: 0.5, grass: 0.5, ground: 2, rock: 2, dragon: 0.5 },
+    electric: { water: 2, electric: 0.5, grass: 0.5, ground: 0, flying: 2, dragon: 0.5 },
+    grass:    { fire: 0.5, water: 2, grass: 0.5, poison: 0.5, ground: 2, flying: 0.5, bug: 0.5, rock: 2, dragon: 0.5, steel: 0.5 },
+    ice:      { fire: 0.5, water: 0.5, grass: 2, ice: 0.5, ground: 2, flying: 2, dragon: 2, steel: 0.5 },
+    fighting: { normal: 2, ice: 2, poison: 0.5, flying: 0.5, psychic: 0.5, bug: 0.5, rock: 2, ghost: 0, dark: 2, steel: 2, fairy: 0.5 },
+    poison:   { grass: 2, poison: 0.5, ground: 0.5, rock: 0.5, ghost: 0.5, steel: 0, fairy: 2 },
+    ground:   { fire: 2, electric: 2, grass: 0.5, poison: 2, flying: 0, bug: 0.5, rock: 2, steel: 2 },
+    flying:   { electric: 0.5, grass: 2, fighting: 2, bug: 2, rock: 0.5, steel: 0.5 },
+    psychic:  { fighting: 2, poison: 2, psychic: 0.5, steel: 0.5, dark: 0 },
+    bug:      { fire: 0.5, grass: 2, fighting: 0.5, poison: 0.5, flying: 0.5, psychic: 2, ghost: 0.5, steel: 0.5, dark: 2, fairy: 0.5 },
+    rock:     { fire: 2, ice: 2, fighting: 0.5, ground: 0.5, flying: 2, bug: 2, steel: 0.5 },
+    ghost:    { normal: 0, psychic: 2, ghost: 2, dark: 0.5 },
+    dragon:   { dragon: 2, steel: 0.5, fairy: 0 },
+    steel:    { fire: 0.5, water: 0.5, electric: 0.5, ice: 2, rock: 2, steel: 0.5, fairy: 2 },
+    dark:     { fighting: 0.5, psychic: 2, ghost: 2, dark: 0.5, fairy: 0.5 },
+    fairy:    { fire: 0.5, fighting: 2, poison: 0.5, dragon: 2, dark: 2, steel: 0.5 }
+  };
+
+  function calculateTypeEffectiveness(defTypes) {
+    if (!defTypes || !defTypes.length) return null;
+    const cleanTypes = defTypes.map(t => {
+      let s = String(t).toLowerCase();
+      if (s.includes('magnemite')) return 'steel';
+      if (s.includes('togepi') || s.includes('ralts') || s.includes('cottonee')) return 'fairy';
+      return s;
+    });
+
+    const weak = [];
+    const resist = [];
+    const immune = [];
+
+    ALL_ELEMENT_TYPES.forEach(atk => {
+      let mult = 1.0;
+      const table = TYPE_EFF_MATRIX[atk];
+      for (const def of cleanTypes) {
+        const m = (table && typeof table[def] !== "undefined") ? table[def] : 1.0;
+        mult *= m;
+      }
+      const meta = TYPE_EFF_META[atk] || { nameTh: atk, icon: "" };
+      if (mult > 1) {
+        weak.push({ type: atk, mult, ...meta });
+      } else if (mult === 0) {
+        immune.push({ type: atk, mult: 0, ...meta });
+      } else if (mult < 1) {
+        resist.push({ type: atk, mult, ...meta });
+      }
+    });
+
+    weak.sort((a, b) => b.mult - a.mult);
+    resist.sort((a, b) => a.mult - b.mult);
+
+    return { weak, resist, immune };
+  }
+
+  function renderTypeWeaknessesHtml(speciesId) {
+    const rawTypes = getPokemonTypes(speciesId);
+    if (!rawTypes || !rawTypes.length) return "";
+    const eff = calculateTypeEffectiveness(rawTypes);
+    if (!eff) return "";
+
+    const formatPill = (item) => {
+      let multClass = "mult-half";
+      let multText = "½×";
+      if (item.mult === 4) { multClass = "mult-4x"; multText = "4×"; }
+      else if (item.mult === 2) { multClass = "mult-2x"; multText = "2×"; }
+      else if (item.mult === 0.25) { multClass = "mult-quarter"; multText = "¼×"; }
+      else if (item.mult === 0) { multClass = "mult-0x"; multText = "0×"; }
+
+      return '<span class="eff-pill type--' + item.type + '" title="' + item.nameTh + ' (' + item.type + ') รับดาเมจ ' + multText + '">' +
+        '<span class="eff-icon">' + item.icon + '</span>' +
+        '<span class="eff-name">' + item.nameTh + '</span>' +
+        '<span class="eff-mult ' + multClass + '">' + multText + '</span>' +
+      '</span>';
+    };
+
+    const weakHtml = eff.weak.length
+      ? eff.weak.map(formatPill).join("")
+      : '<span class="eff-none">✓ ไม่มีจุดอ่อน</span>';
+
+    const resistPills = [...eff.immune, ...eff.resist];
+    const resistHtml = resistPills.length
+      ? resistPills.map(formatPill).join("")
+      : '<span class="eff-none">— ปกติ</span>';
+
+    return '<div class="mon-hero__effectiveness">' +
+      '<div class="eff-row">' +
+        '<span class="eff-label eff-label--weak">⚠️ แพ้ทาง:</span>' +
+        '<div class="eff-list">' + weakHtml + '</div>' +
+      '</div>' +
+      '<div class="eff-row">' +
+        '<span class="eff-label eff-label--resist">🛡️ ต้านทาน:</span>' +
+        '<div class="eff-list">' + resistHtml + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  root.calculateTypeEffectiveness = calculateTypeEffectiveness;
+  root.renderTypeWeaknessesHtml = renderTypeWeaknessesHtml;
+  if (typeof window !== "undefined") {
+    window.calculateTypeEffectiveness = calculateTypeEffectiveness;
+    window.renderTypeWeaknessesHtml = renderTypeWeaknessesHtml;
+  }
 
   function getItemSpriteUrl(itemName, itemId) {
     if (!itemId || itemId <= 0) return null;
@@ -5534,7 +5758,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
   let selectedBoxIndex = 0, selectedBoxSlot = 0;
   let selectedAddItem = null;
   let COPIED_POKEMON = null;
-  let showdownTarget = { type: "party", index: 0, box: 0, slot: 0 };
+  
 
   const elements = {
     loadView: $("#loadView"), editorView: $("#editorView"), dropZone: $("#dropZone"), fileInput: $("#fileInput"),
@@ -5549,8 +5773,6 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
     btnFillTMs: $("#btnFillTMs"), btnFillMedicines: $("#btnFillMedicines"),
     btnFillBalls: $("#btnFillBalls"), btnFillBerries: $("#btnFillBerries"), btnFillBattleItems: $("#btnFillBattleItems"),
 
-    showdownModal: $("#showdownModal"), showdownInput: $("#showdownInput"), showdownPreviewText: $("#showdownPreviewText"),
-    btnApplyShowdown: $("#btnApplyShowdown"), btnCloseShowdownModal: $("#btnCloseShowdownModal"),
     depositModal: $("#depositModal"), depositTargetBox: $("#depositTargetBox"), btnCancelDeposit: $("#btnCancelDeposit"), btnConfirmDeposit: $("#btnConfirmDeposit"), btnCloseDepositModal: $("#btnCloseDepositModal"),
     btnOpenSortAllModal: $("#btnOpenSortAllModal"), sortAllModal: $("#sortAllModal"), sortAllCriteria: $("#sortAllCriteria"),
     btnCancelSortAll: $("#btnCancelSortAll"), btnConfirmSortAll: $("#btnConfirmSortAll"),
@@ -14253,6 +14475,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
               <span class="bst-badge">BST ${bst}</span>
             </div>
             <p style="margin-top:6px;">HP: <strong>${mon.hp} / ${mon.maxHp}</strong> • Level <strong>${mon.level}</strong> • <strong>${genderSymbol}</strong> • Nature <strong>${natureName}</strong> <small>(${natureEffect})</small></p>
+            ${renderTypeWeaknessesHtml(mon.species)}
           </div>
         </div>
         <div class="mon-hero__actions">
@@ -14266,8 +14489,6 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       <div style="display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap;">
         <button id="btnCopyPartyMon" class="button" style="padding:7px 14px; font-size:0.82rem;" type="button">📋 คัดลอก</button>
         ${COPIED_POKEMON ? `<button id="btnPastePartyMon" class="button" style="padding:7px 14px; font-size:0.82rem; border-color:var(--gold); color:var(--gold);" type="button">📥 วาง (${escapeHtml(COPIED_POKEMON.nickname || COPIED_POKEMON.speciesName)})</button>` : ""}
-        <button id="btnExportPartyShowdown" class="button" style="padding:7px 14px; font-size:0.82rem;" type="button">📥 Showdown Text</button>
-        <button id="btnImportPartyShowdown" class="button" style="padding:7px 14px; font-size:0.82rem;" type="button">📥 นำเข้า Showdown</button>
       </div>
 
       ${renderMonSubTabsHtml(getActiveMonTab())}
@@ -14304,21 +14525,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
           </div>
         </section>
 
-        <section class="panel mon-section mon-section--builds" data-tab-group="moves">
-          <div class="panel-heading panel-heading--actions">
-            <span style="background:linear-gradient(135deg, #f59e0b, #ef4444); color:#fff; display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; font-size:0.95rem;">🎯</span>
-            <div>
-              <h3 style="color:#fbbf24; display:flex; align-items:center; gap:8px;">
-                แนะนำแนวทางการปั้น & ชุดท่าต่อสู้ (Recommended Builds)
-                <span class="badge-tag" style="background:rgba(245,158,11,0.2); color:#f59e0b; border:1px solid rgba(245,158,11,0.4); font-size:0.72rem; padding:2px 7px; border-radius:4px;">QoL Presets</span>
-              </h3>
-              <p>วิเคราะห์สายการเล่น ยุทธวิธี Nature, EVs, Item และชุด Moveset แนะนำ พร้อมปุ่ม 1-Click ปั้นได้ทันที</p>
-            </div>
-          </div>
-          <div id="partyBuildsContainer" class="builds-container">
-            ${renderRecommendedBuildsHtml(mon, 'party')}
-          </div>
-        </section>
+
 
         <section class="panel mon-section mon-section--stat-graph" data-tab-group="stats">
           <div class="panel-heading panel-heading--actions">
@@ -14396,20 +14603,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       });
     });
 
-    $$("#partyBuildsContainer .btn-apply-build").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const buildIdx = Number(btn.dataset.buildIdx);
-        applyBuildToSelectedPokemon("party", buildIdx);
-      });
-    });
-    $$("#partyBuildsContainer .btn-copy-build-showdown").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const buildIdx = Number(btn.dataset.buildIdx);
-        exportBuildShowdownText("party", buildIdx);
-      });
-    });
+
 
     new SearchSelect($("#partySpeciesPicker"), ROM.species.filter(s => s.id > 0), {
       value: mon.species, placeholder: "ค้นหาสายพันธุ์ หรือ หมายเลข Dex...",
@@ -14715,20 +14909,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       renderParty();
       showStatus(`วาง ${COPIED_POKEMON.nickname || COPIED_POKEMON.speciesName} ลงในทีมช่อง ${mon.index + 1} แล้ว!`);
     });
-    $("#btnExportPartyShowdown").addEventListener("click", () => {
-      const txt = generateShowdownText(mon, ROM);
-      navigator.clipboard.writeText(txt).then(() => {
-        showStatus("คัดลอก Showdown Text ลง Clipboard แล้ว!");
-      }).catch(() => {
-        prompt("Showdown Text:", txt);
-      });
-    });
-    $("#btnImportPartyShowdown").addEventListener("click", () => {
-      showdownTarget = { type: "party", index: mon.index };
-      elements.showdownInput.value = "";
-      elements.showdownPreviewText.textContent = "—";
-      elements.showdownModal.showModal();
-    });
+
   }
 
   function applyMonToParty(index, data) {
@@ -14832,7 +15013,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
           </div>
           <div class="mon-hero__actions">
             <button id="btnPastePCMonEmpty" class="button" type="button" ${COPIED_POKEMON ? "" : "disabled"}>📥 วางโปเกมอนที่คัดลอก</button>
-            <button id="btnImportPCShowdownEmpty" class="button" type="button">📥 นำเข้า Showdown</button>
+  
             <button id="btnCreatePCMon" class="button button--primary" type="button">✨ สร้าง Pokémon ในช่องนี้</button>
           </div>
         </div>
@@ -14855,12 +15036,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
         renderPCBoxes();
         showStatus(`วาง ${COPIED_POKEMON.nickname || COPIED_POKEMON.speciesName} ลงใน Box ${selectedBoxIndex + 1} ช่อง ${selectedBoxSlot + 1} แล้ว!`);
       });
-      $("#btnImportPCShowdownEmpty").addEventListener("click", () => {
-        showdownTarget = { type: "pc", box: selectedBoxIndex, slot: selectedBoxSlot };
-        elements.showdownInput.value = "";
-        elements.showdownPreviewText.textContent = "—";
-        elements.showdownModal.showModal();
-      });
+
       return;
     }
 
@@ -14890,6 +15066,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
               <span class="bst-badge">BST ${bst}</span>
             </div>
             <p style="margin-top:6px;">BOX <strong>${selectedBoxIndex + 1}</strong> • ช่องที่ <strong>${selectedBoxSlot + 1}</strong> • Level <strong>${mon.level}</strong> • EXP <strong>${mon.experience.toLocaleString()}</strong> • <strong>${mon.shiny ? "★ Shiny" : "Normal"}</strong></p>
+            ${renderTypeWeaknessesHtml(mon.species)}
           </div>
         </div>
         <div class="mon-hero__actions">
@@ -14902,8 +15079,6 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       <div style="display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap;">
         <button id="btnCopyPCMon" class="button" style="padding:7px 14px; font-size:0.82rem;" type="button">📋 คัดลอก</button>
         ${COPIED_POKEMON ? `<button id="btnPastePCMon" class="button" style="padding:7px 14px; font-size:0.82rem; border-color:var(--gold); color:var(--gold);" type="button">📥 วาง (${escapeHtml(COPIED_POKEMON.nickname || COPIED_POKEMON.speciesName)})</button>` : ""}
-        <button id="btnExportPCShowdown" class="button" style="padding:7px 14px; font-size:0.82rem;" type="button">📥 Showdown Text</button>
-        <button id="btnImportPCShowdown" class="button" style="padding:7px 14px; font-size:0.82rem;" type="button">📥 นำเข้า Showdown</button>
       </div>
 
       ${renderMonSubTabsHtml(getActiveMonTab())}
@@ -14940,21 +15115,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
           </div>
         </section>
 
-        <section class="panel mon-section mon-section--builds" data-tab-group="moves">
-          <div class="panel-heading panel-heading--actions">
-            <span style="background:linear-gradient(135deg, #f59e0b, #ef4444); color:#fff; display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; font-size:0.95rem;">🎯</span>
-            <div>
-              <h3 style="color:#fbbf24; display:flex; align-items:center; gap:8px;">
-                แนะนำแนวทางการปั้น & ชุดท่าต่อสู้ (Recommended Builds)
-                <span class="badge-tag" style="background:rgba(245,158,11,0.2); color:#f59e0b; border:1px solid rgba(245,158,11,0.4); font-size:0.72rem; padding:2px 7px; border-radius:4px;">QoL Presets</span>
-              </h3>
-              <p>วิเคราะห์สายการเล่น ยุทธวิธี Nature, EVs, Item และชุด Moveset แนะนำ พร้อมปุ่ม 1-Click ปั้นได้ทันที</p>
-            </div>
-          </div>
-          <div id="pcBuildsContainer" class="builds-container">
-            ${renderRecommendedBuildsHtml(mon, 'pc')}
-          </div>
-        </section>
+
 
         <section class="panel mon-section mon-section--stat-graph" data-tab-group="stats">
           <div class="panel-heading panel-heading--actions">
@@ -15033,20 +15194,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       });
     });
 
-    $$("#pcBuildsContainer .btn-apply-build").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const buildIdx = Number(btn.dataset.buildIdx);
-        applyBuildToSelectedPokemon("pc", buildIdx);
-      });
-    });
-    $$("#pcBuildsContainer .btn-copy-build-showdown").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const buildIdx = Number(btn.dataset.buildIdx);
-        exportBuildShowdownText("pc", buildIdx);
-      });
-    });
+
 
     new SearchSelect($("#pcSpeciesPicker"), ROM.species.filter(s => s.id > 0), {
       value: mon.species, placeholder: "ค้นหาสายพันธุ์ หรือ หมายเลข Dex...",
@@ -15379,20 +15527,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       renderPCBoxes();
       showStatus(`วาง ${COPIED_POKEMON.nickname || COPIED_POKEMON.speciesName} ลงใน Box ${selectedBoxIndex + 1} ช่อง ${selectedBoxSlot + 1} แล้ว!`);
     });
-    $("#btnExportPCShowdown").addEventListener("click", () => {
-      const txt = generateShowdownText(mon, ROM);
-      navigator.clipboard.writeText(txt).then(() => {
-        showStatus("คัดลอก Showdown Text ลง Clipboard แล้ว!");
-      }).catch(() => {
-        prompt("Showdown Text:", txt);
-      });
-    });
-    $("#btnImportPCShowdown").addEventListener("click", () => {
-      showdownTarget = { type: "pc", box: selectedBoxIndex, slot: selectedBoxSlot };
-      elements.showdownInput.value = "";
-      elements.showdownPreviewText.textContent = "—";
-      elements.showdownModal.showModal();
-    });
+
   }
 
   function updateEvTotal() {
@@ -15638,16 +15773,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
 
 
 
-  // Showdown Modal Handling
-  elements.showdownInput.addEventListener("input", () => {
-    try {
-      const parsed = parseShowdownText(elements.showdownInput.value, ROM);
-      const spName = ROM.species[parsed.species]?.name || "Unknown";
-      elements.showdownPreviewText.textContent = `${parsed.nickname || spName} (${spName}) • Lv.${parsed.level} • ${parsed.nature !== undefined ? NATURES[parsed.nature][0] : "Hardy"}`;
-    } catch (e) {
-      elements.showdownPreviewText.textContent = "(รูปแบบไม่ถูกต้อง)";
-    }
-  });
+
   function handleBoxSearch(query) {
     const term = query.trim().toLowerCase();
     const resultsEl = elements.pcBoxSearchResults;
@@ -15897,24 +16023,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
     }
   });
 
-  elements.btnApplyShowdown.addEventListener("click", () => {
-    try {
-      const parsed = parseShowdownText(elements.showdownInput.value, ROM);
-      if (showdownTarget.type === "party") {
-        applyMonToParty(showdownTarget.index, parsed);
-        renderParty();
-        showStatus(`นำเข้า ${parsed.nickname || "โปเกมอน"} ลงในทีมช่อง ${showdownTarget.index + 1} เรียบร้อย!`);
-      } else {
-        editor.setBoxPokemon(showdownTarget.box, showdownTarget.slot, parsed);
-        renderPCBoxes();
-        showStatus(`นำเข้า ${parsed.nickname || "โปเกมอน"} ลงใน Box ${showdownTarget.box + 1} ช่อง ${showdownTarget.slot + 1} เรียบร้อย!`);
-      }
-      elements.showdownModal.close();
-    } catch (err) {
-      showError(err);
-    }
-  });
-  elements.btnCloseShowdownModal.addEventListener("click", () => elements.showdownModal.close());
+
 
   elements.downloadButton.addEventListener("click", downloadEditedSave);
 
