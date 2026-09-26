@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pokémon Heart and Soul Save Editor v2.0.18 (HnS v2.0.6)</title>
+  <title>Pokémon Heart and Soul Save Editor v2.0.19 (HnS v2.0.6)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2805,7 +2805,7 @@
 <body>
 
   <header class="hero">
-    <div class="hero-badge">✨ Pokémon Heart and Soul Master Save Editor • v2.0.18 (HnS v2.0.6 Database)</div>
+    <div class="hero-badge">✨ Pokémon Heart and Soul Master Save Editor • v2.0.19 (HnS v2.0.6 Database)</div>
     <h1>Pokémon Heart and Soul Save Editor</h1>
     <p>เครื่องมือแก้ไขเซฟเกม Pokémon Heart and Soul (v2.0.6) อ้างอิงตามเอกสารล่าสุด Official Documentation Flash 128KB รองรับ Party ครบ 6 ตัว, PC Storage 14 กล่อง (420 ช่อง), ปรับค่า IVs / EVs พร้อมระบบคำนวณสเตตัส Real-time, ท่าต่อสู้ & Max PP, เติมไอเท็มด่วน One-Click, และแก้ไขข้อมูล Trainer</p>
     <div class="version-selector-bar">
@@ -4343,6 +4343,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
 
         let currentHp = isParty ? view.getUint16(86, true) : 0;
         let maxHp = isParty ? view.getUint16(88, true) : 0;
+        let status = isParty ? view.getUint32(80, true) : 0;
 
         const monMeta = this.romData?.species?.[species] || { name: `Species #${species}` };
 
@@ -4384,6 +4385,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
           level,
           currentHp, hp: (currentHp || maxHp), genderRatio: (monMeta.genderRatio ?? 0xFF),
           maxHp,
+          status,
           nature: (pid % 25), natureName: (NATURES[pid % 25] ? NATURES[pid % 25][0] : "Hardy"),
           isShiny: this.isMonShiny(pid, otId), shiny: this.isMonShiny(pid, otId),
           gender: this.partyGender(species, pid)
@@ -4399,12 +4401,23 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
 
       const heldItem = view.getUint16(34, true);
       const experience = view.getUint32(36, true);
-      const moves = [
-        { id: view.getUint16(40, true), pp: monBytes[48] },
-        { id: view.getUint16(42, true), pp: monBytes[49] },
-        { id: view.getUint16(44, true), pp: monBytes[50] },
-        { id: view.getUint16(46, true), pp: monBytes[51] }
-      ];
+      const ppBonusByte = monBytes[60] || 0;
+      const moves = [0, 1, 2, 3].map(s => {
+        const mId = view.getUint16(40 + s * 2, true);
+        const pp = monBytes[48 + s];
+        const meta = this.romData?.moves?.[mId] || { name: `Move #${mId}`, pp: 0 };
+        const basePp = meta.pp || 0;
+        const ppBonus = (ppBonusByte >> (s * 2)) & 3;
+        const currentMaxPp = basePp ? calculateMaxPP(basePp, ppBonus) : 0;
+        return {
+          id: mId,
+          name: meta.name || "None",
+          pp,
+          basePp,
+          ppBonus,
+          currentMaxPp
+        };
+      });
 
       const evs = [
         monBytes[52], monBytes[53], monBytes[54],
@@ -4444,26 +4457,14 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
         heldItem,
         experience,
         friendship: monBytes[61],
-        ppBonuses: monBytes[60] || 0,
-        moves: moves.map(m => {
-          const meta = this.romData?.moves?.[m.id] || { name: `Move #${m.id}`, pp: m.basePp || 0 };
-          const basePp = meta.pp || m.basePp || 0;
-          const ppBonus = m.ppBonus ?? 0;
-          const currentMaxPp = basePp ? calculateMaxPP(basePp, ppBonus) : 0;
-          return {
-            id: m.id,
-            name: meta.name || m.name,
-            pp: m.pp,
-            basePp,
-            ppBonus,
-            currentMaxPp
-          };
-        }),
+        ppBonuses: ppBonusByte,
+        moves: moves,
         evs,
         ivs,
         isEgg,
         abilitySlot,
         level,
+        status: isParty ? view.getUint32(76, true) : 0,
         currentHp: isParty ? view.getUint16(82, true) : 0,
         maxHp: isParty ? view.getUint16(84, true) : 0,
         nature: (personality % 25), natureName: (NATURES[personality % 25] ? NATURES[personality % 25][0] : "Hardy"),
@@ -4531,15 +4532,17 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
         let ppBonusByte = 0;
         for (let m = 0; m < 4; m++) {
           const mv = mon.moves?.[m];
+          const base = mv?.basePp || this.moveMeta(mv?.id)?.pp || 0;
           let b = mv?.ppBonus;
           if (b === undefined || b === null) {
-            const base = mv?.basePp || this.moveMeta(mv?.id)?.pp || 0;
-            if (base && mv?.pp && mv.pp > base) {
+            b = 0;
+          }
+          if (base && mv?.pp && mv.pp > base) {
+            const curCap = calculateMaxPP(base, b);
+            if (mv.pp > curCap) {
               if (mv.pp > calculateMaxPP(base, 2)) b = 3;
               else if (mv.pp > calculateMaxPP(base, 1)) b = 2;
               else b = 1;
-            } else {
-              b = 0;
             }
           }
           b = clamp(Number(b) || 0, 0, 3);
@@ -4595,9 +4598,12 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
         // If Party, write stats at 80..99
         if (isParty) {
           const stats = computeMonStats(mon, this.speciesMeta(mon.species));
+          view.setUint32(80, (mon.status || 0) >>> 0, true); // Status condition (0 = healthy)
           out[84] = mon.level;
-          view.setUint16(86, stats[0], true); // Current HP
-          view.setUint16(88, stats[0], true); // Max HP
+          const maxHpVal = stats[0] || mon.maxHp || 100;
+          const curHpVal = (mon.currentHp !== undefined && mon.currentHp !== null) ? clamp(mon.currentHp, 0, maxHpVal) : maxHpVal;
+          view.setUint16(86, curHpVal, true); // Current HP
+          view.setUint16(88, maxHpVal, true); // Max HP
           view.setUint16(90, stats[1], true); // Atk
           view.setUint16(92, stats[2], true); // Def
           view.setUint16(94, stats[3], true); // Spe
@@ -4621,11 +4627,26 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       view.setUint16(34, mon.heldItem || 0, true);
       view.setUint32(36, mon.experience, true);
 
+      let ppBonusByte = 0;
       for (let m = 0; m < 4; m++) {
         const mv = mon.moves[m] || { id: 0, pp: 0 };
         view.setUint16(40 + m * 2, mv.id, true);
-        out[48 + m] = mv.pp;
+        out[48 + m] = mv.pp || 0;
+        const base = mv?.basePp || this.moveMeta(mv?.id)?.pp || 0;
+        let b = mv?.ppBonus;
+        if (b === undefined || b === null) b = 0;
+        if (base && mv?.pp && mv.pp > base) {
+          const curCap = calculateMaxPP(base, b);
+          if (mv.pp > curCap) {
+            if (mv.pp > calculateMaxPP(base, 2)) b = 3;
+            else if (mv.pp > calculateMaxPP(base, 1)) b = 2;
+            else b = 1;
+          }
+        }
+        b = clamp(Number(b) || 0, 0, 3);
+        ppBonusByte |= (b << (m * 2));
       }
+      out[60] = ppBonusByte;
 
       for (let e = 0; e < 6; e++) out[52 + e] = mon.evs[e] || 0;
       out[61] = clamp(mon.friendship ?? 70, 0, 255);
@@ -4922,13 +4943,26 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       const party = this.getParty();
       const mon = party[index];
       if (!mon || slot < 0 || slot >= 4) return;
-      mon.moves[slot].pp = clamp(Number(pp), 0, 127);
+      if (!mon.moves[slot]) mon.moves[slot] = { id: 0, pp: 0, basePp: 0, ppBonus: 0, currentMaxPp: 0 };
+      const val = clamp(Number(pp), 0, 127);
+      mon.moves[slot].pp = val;
+      const basePp = mon.moves[slot].basePp || this.moveMeta(mon.moves[slot].id)?.pp || 0;
+      mon.moves[slot].basePp = basePp;
       if (bonus !== null && bonus !== undefined) {
         mon.moves[slot].ppBonus = clamp(Number(bonus), 0, 3);
-        const basePp = mon.moves[slot].basePp || this.moveMeta(mon.moves[slot].id)?.pp || 0;
-        mon.moves[slot].currentMaxPp = basePp ? calculateMaxPP(basePp, mon.moves[slot].ppBonus) : 0;
+      } else if (basePp && val > basePp) {
+        if (val > calculateMaxPP(basePp, 2)) mon.moves[slot].ppBonus = 3;
+        else if (val > calculateMaxPP(basePp, 1)) mon.moves[slot].ppBonus = 2;
+        else mon.moves[slot].ppBonus = 1;
       }
+      mon.moves[slot].currentMaxPp = basePp ? calculateMaxPP(basePp, mon.moves[slot].ppBonus || 0) : 0;
       this.setPartyPokemon(index, mon);
+      this.markPartyDirty();
+    }
+
+    getPartyPokemon(index) {
+      const party = this.getParty();
+      return party[index] || null;
     }
 
     setPartyIV(index, statIndex, value) {
@@ -4944,18 +4978,6 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       const mon = party[index];
       if (!mon || statIndex < 0 || statIndex >= 6) return;
       mon.evs[statIndex] = clamp(Number(value), 0, 255);
-      this.setPartyPokemon(index, mon);
-    }
-
-    healPartyMember(index) {
-      const party = this.getParty();
-      const mon = party[index];
-      if (!mon) return;
-      for (let s = 0; s < 4; s++) {
-        if (mon.moves[s] && mon.moves[s].id > 0) {
-          mon.moves[s].pp = calculateMaxPP(mon.moves[s].basePp, 3);
-        }
-      }
       this.setPartyPokemon(index, mon);
     }
 
@@ -5489,10 +5511,17 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       const mon = party[index];
       if (!mon || slot < 0 || slot >= 4) return;
       if (!mon.moves[slot]) mon.moves[slot] = { id: 0, pp: 0, basePp: 0, ppBonus: 0, currentMaxPp: 0 };
-      mon.moves[slot].ppBonus = clamp(Number(bonus), 0, 3);
+      const b = clamp(Number(bonus), 0, 3);
+      mon.moves[slot].ppBonus = b;
       const basePp = mon.moves[slot].basePp || this.moveMeta(mon.moves[slot].id)?.pp || 0;
-      mon.moves[slot].currentMaxPp = basePp ? (basePp + Math.floor(basePp * 0.2) * mon.moves[slot].ppBonus) : 0;
+      const maxPp = basePp ? calculateMaxPP(basePp, b) : 0;
+      mon.moves[slot].basePp = basePp;
+      mon.moves[slot].currentMaxPp = maxPp;
+      if (mon.moves[slot].pp > maxPp) {
+        mon.moves[slot].pp = maxPp;
+      }
       this.setPartyPokemon(index, mon);
+      this.markPartyDirty();
     }
 
     setPartyMoveMaxPP(index, slot) {
@@ -5508,6 +5537,7 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       move.basePp = basePp;
       move.currentMaxPp = maxPp;
       this.setPartyPokemon(index, mon);
+      this.markPartyDirty();
     }
 
     setPartyAllMaxPP(index) {
@@ -5526,15 +5556,41 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
         }
       }
       this.setPartyPokemon(index, mon);
+      this.markPartyDirty();
+    }
+
+    setBoxPP(boxIndex, slotIndex, slot, pp, bonus = null) {
+      const mon = this.getBoxPokemon(boxIndex, slotIndex);
+      if (!mon || slot < 0 || slot >= 4) return;
+      if (!mon.moves[slot]) mon.moves[slot] = { id: 0, pp: 0, basePp: 0, ppBonus: 0, currentMaxPp: 0 };
+      const val = clamp(Number(pp), 0, 127);
+      mon.moves[slot].pp = val;
+      const basePp = mon.moves[slot].basePp || this.moveMeta(mon.moves[slot].id)?.pp || 0;
+      mon.moves[slot].basePp = basePp;
+      if (bonus !== null && bonus !== undefined) {
+        mon.moves[slot].ppBonus = clamp(Number(bonus), 0, 3);
+      } else if (basePp && val > basePp) {
+        if (val > calculateMaxPP(basePp, 2)) mon.moves[slot].ppBonus = 3;
+        else if (val > calculateMaxPP(basePp, 1)) mon.moves[slot].ppBonus = 2;
+        else mon.moves[slot].ppBonus = 1;
+      }
+      mon.moves[slot].currentMaxPp = basePp ? calculateMaxPP(basePp, mon.moves[slot].ppBonus || 0) : 0;
+      this.setBoxPokemon(boxIndex, slotIndex, mon);
     }
 
     setBoxPPBonus(boxIndex, slotIndex, slot, bonus) {
       const mon = this.getBoxPokemon(boxIndex, slotIndex);
       if (!mon || slot < 0 || slot >= 4) return;
       if (!mon.moves[slot]) mon.moves[slot] = { id: 0, pp: 0, basePp: 0, ppBonus: 0, currentMaxPp: 0 };
-      mon.moves[slot].ppBonus = clamp(Number(bonus), 0, 3);
+      const b = clamp(Number(bonus), 0, 3);
+      mon.moves[slot].ppBonus = b;
       const basePp = mon.moves[slot].basePp || this.moveMeta(mon.moves[slot].id)?.pp || 0;
-      mon.moves[slot].currentMaxPp = basePp ? (basePp + Math.floor(basePp * 0.2) * mon.moves[slot].ppBonus) : 0;
+      const maxPp = basePp ? calculateMaxPP(basePp, b) : 0;
+      mon.moves[slot].basePp = basePp;
+      mon.moves[slot].currentMaxPp = maxPp;
+      if (mon.moves[slot].pp > maxPp) {
+        mon.moves[slot].pp = maxPp;
+      }
       this.setBoxPokemon(boxIndex, slotIndex, mon);
     }
 
@@ -5569,24 +5625,46 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
       this.setBoxPokemon(boxIndex, slotIndex, mon);
     }
 
-    healPartyMember(index) {
-      const mon = this.getPartyPokemon(index);
+    healPartyMember(index, maxPP = true) {
+      const party = this.getParty();
+      const mon = party[index];
       if (!mon || !mon.species) return;
-      mon.hp = mon.maxHp;
-      mon.currentHp = mon.maxHp;
+
+      const stats = computeMonStats(mon, this.speciesMeta(mon.species));
+      const maxHp = stats[0] || mon.maxHp || 100;
+      mon.maxHp = maxHp;
+      mon.currentHp = maxHp;
+      mon.hp = maxHp;
+      mon.status = 0; // Clear all status ailments (sleep, poison, burn, freeze, paralysis)
+
+      for (let s = 0; s < 4; s++) {
+        const move = mon.moves?.[s];
+        if (move && move.id > 0) {
+          const basePp = this.moveMeta(move.id)?.pp || move.basePp || 0;
+          if (maxPP) {
+            const maxPp = basePp ? calculateMaxPP(basePp, 3) : 0;
+            move.ppBonus = 3;
+            move.pp = maxPp;
+            move.basePp = basePp;
+            move.currentMaxPp = maxPp;
+          } else {
+            const curBonus = clamp(move.ppBonus || 0, 0, 3);
+            const curMax = basePp ? calculateMaxPP(basePp, curBonus) : 0;
+            move.pp = curMax;
+            move.basePp = basePp;
+            move.currentMaxPp = curMax;
+          }
+        }
+      }
+
       this.setPartyPokemon(index, mon);
       this.markPartyDirty();
     }
 
-    batchHealParty() {
+    batchHealParty(maxPP = true) {
       const party = this.getParty();
       for (let i = 0; i < party.length; i++) {
-        const mon = party[i];
-        if (mon && mon.species) {
-          mon.currentHp = mon.maxHp;
-          mon.hp = mon.maxHp;
-          this.setPartyPokemon(i, mon);
-        }
+        this.healPartyMember(i, maxPP);
       }
       this.markPartyDirty();
     }
@@ -14867,9 +14945,9 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
     });
     $("#shinyToggle").addEventListener("change", (event) => { editor.setPartyShiny(mon.index, event.target.checked); renderParty(); });
     $("#healMonButton").addEventListener("click", () => {
-      editor.healPartyMember(selectedPartyIndex);
+      editor.healPartyMember(selectedPartyIndex, true);
       renderParty();
-      showStatus(`รักษา ${mon.nickname || mon.speciesName} เต็มแล้ว`);
+      showStatus(`💊 ฟื้นฟู HP เต็ม, ล้างสถานะผิดปกติ และเซ็ต Max PP (24/24) ให้ ${mon.nickname || mon.speciesName} เรียบร้อยแล้ว!`);
     });
 
     $("#btnDepositPartyMon")?.addEventListener("click", () => {
@@ -15899,13 +15977,9 @@ const SOULGOLD_DEX_ORDER = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,2
   // Party Quick Batch Actions
   $("#btnBatchHeal")?.addEventListener("click", () => {
     if (!editor) return;
-    const party = editor.getParty();
-    for (let i = 0; i < party.length; i++) {
-      editor.healPartyMember(i);
-      editor.setPartyAllMaxPP(i);
-    }
+    editor.batchHealParty(true);
     renderParty();
-    showStatus("💊 ฟื้นฟู HP เต็ม, ล้างสถานะผิดปกติ และเซ็ต Max PP ให้โปเกมอนทั้ง 6 ตัวในทีมเรียบร้อยแล้ว!");
+    showStatus("💊 ฟื้นฟู HP เต็ม, ล้างสถานะผิดปกติ และเซ็ต Max PP (24/24) ให้โปเกมอนทั้ง 6 ตัวในทีมเรียบร้อยแล้ว!");
   });
 
   $("#btnBatchFriendship")?.addEventListener("click", () => {
